@@ -23,6 +23,13 @@ import UserInfo from "../components/UserInfo.jsx";
 
 const SEARCH_DELAY = 300; // ms to wait after the last keystroke before searching
 
+// e.g. "03:45 PM - 04/09/2071" (time, then date as DD/MM/YYYY)
+const formatMessageTime = (timestamp) => {
+  const date = new Date(timestamp);
+  const time = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return `${time} - ${date.toLocaleDateString("en-GB")}`;
+};
+
 export default function ChatListPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -33,15 +40,33 @@ export default function ChatListPage() {
   const searchAbortRef = useRef(null);
   const socketRef = useRef(null);
   const [contacts, setContacts] = useState([]);
+  const contactsRef = useRef([]);
   const [activeContact, setActiveContact] = useState(null);
   const activeContactRef = useRef(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
 
+  const loadContacts = () =>
+    api.get("/api/contacts").then(({ data }) => setContacts(data)).catch(() => { });
+
   useEffect(() => {
     api.get("/api/auth/me").then(({ data }) => setUser(data)).catch(() => { });
-    api.get("/api/contacts").then(({ data }) => setContacts(data)).catch(() => { });
+    loadContacts();
   }, []);
+
+  useEffect(() => {
+    contactsRef.current = contacts;
+  }, [contacts]);
+
+  // Saves the user as my contact and puts them at the top of the list (if not already there).
+  const createContact = async (userId) => {
+    try {
+      const { data: contact } = await api.post("/api/contacts", { contactId: userId });
+      setContacts((prev) => (prev.some((c) => c._id === contact._id) ? prev : [contact, ...prev]));
+    } catch {
+      // Contact could not be added; the list stays as it was.
+    }
+  };
 
   useEffect(() => {
     // withCredentials sends the httpOnly token cookie, which the server checks before accepting
@@ -54,8 +79,15 @@ export default function ChatListPage() {
 
     socket.on("receive_message", ({ message, fromUserId, toUserId, name, createdAt }) => {
       console.log(message, fromUserId, toUserId, name, createdAt)
-      if (activeContactRef?.current?._id == toUserId) {
+      const openId = activeContactRef.current?._id;
+      if (fromUserId === openId || toUserId === openId) {
         setMessages((prev) => [...prev, { message, fromUserId, toUserId, name, createdAt }])
+      }
+      else {
+        // The listener is set up once, so read contacts from the ref, not the (stale) state.
+        const isKnown = contactsRef.current.some((c) => c.contact._id === fromUserId);
+        // The server has already saved this contact; reload the list to show it.
+        if (!isKnown) loadContacts();
       }
     });
 
@@ -111,17 +143,10 @@ export default function ChatListPage() {
     searchUsers(q);
   };
 
-  const handleSelectUser = async (e, selected) => {
+  const handleSelectUser = (e, selected) => {
     if (!selected) return;
     handleSearchChange(e, "");
-
-    try {
-      const { data: contact } = await api.post("/api/contacts", { contactId: selected._id });
-      // Put a new contact at the top; an already-added one stays where it is.
-      setContacts((prev) => (prev.some((c) => c._id === contact._id) ? prev : [contact, ...prev]));
-    } catch {
-      // Contact could not be added; the list stays as it was.
-    }
+    createContact(selected._id);
   };
 
   useEffect(() => {
@@ -303,7 +328,7 @@ export default function ChatListPage() {
                   py: 2,
                 }}
               >
-                {messages.map(({ message, fromUserId }, index) => {
+                {messages.map(({ message, fromUserId, createdAt }, index) => {
                   const isMine = fromUserId === user?._id;
                   return (
                     <Box
@@ -324,6 +349,13 @@ export default function ChatListPage() {
                       }}
                     >
                       {message}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", textAlign: "right", fontSize: 11, mt: 0.25 }}
+                      >
+                        {formatMessageTime(createdAt)}
+                      </Typography>
                     </Box>
                   );
                 })}
