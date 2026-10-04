@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Contact from "../models/Contact.js";
 import User from "../models/User.js";
+import { ensureContact } from "../services/contact.service.js";
 
 export const addContact = async (req, res) => {
   const contactId = String(req.body?.contactId ?? "");
@@ -14,12 +15,7 @@ export const addContact = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Creates the connection, or returns the existing one if it was already added.
-    const contact = await Contact.findOneAndUpdate(
-      { owner: req.userId, contact: contactId },
-      {},
-      { upsert: true, returnDocument: "after" }
-    ).populate("contact", "name email");
+    const contact = await ensureContact(req.userId, contactId).populate("contact", "name email");
 
     res.json(contact);
   } catch (err) {

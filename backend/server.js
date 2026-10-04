@@ -6,7 +6,7 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
-import { initSocket } from "./socket.js";
+import { initSocket } from "./socket/index.js";
 
 const PORT = Number(process.env.PORT) || 8080;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
