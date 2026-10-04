@@ -4,9 +4,10 @@ export const TOKEN_COOKIE = "token";
 export const TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Logout must clear the cookie with the same options it was set with.
+// In production the frontend is on a different site, so the cookie must be SameSite=None (which requires Secure).
 export const TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: "lax",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   secure: process.env.NODE_ENV === "production",
   maxAge: TOKEN_MAX_AGE,
 };
