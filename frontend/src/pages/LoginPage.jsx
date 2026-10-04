@@ -1,42 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { io } from "socket.io-client";
 import { Alert, Box, Button, Paper, TextField, Typography } from "@mui/material";
 import api from "../api/axios.js";
 import ChatLogo from "../components/ChatLogo.jsx";
 
-const BASE_URL = import.meta.env.VITE_BASE_URL;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_RE = /^\d{6}$/;
 const FORM_SX = { mt: 4, maxWidth: 384, display: "flex", flexDirection: "column", gap: 2 };
 
-const STATUS_COLOR = {
-  connecting: "warning.main",
-  connected: "success.main",
-  disconnected: "error.main",
-  error: "error.main",
-};
-
 export default function LoginPage() {
   const navigate = useNavigate();
-  const socketRef = useRef(null);
-  const [status, setStatus] = useState("connecting");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [sentTo, setSentTo] = useState(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const socket = io(BASE_URL);
-    socketRef.current = socket;
-
-    socket.on("connect", () => setStatus("connected"));
-    socket.on("disconnect", () => setStatus("disconnected"));
-    socket.on("connect_error", () => setStatus("error"));
-
-    return () => socket.disconnect();
-  }, []);
 
   useEffect(() => {
     api
@@ -139,13 +117,6 @@ export default function LoginPage() {
               </Box>
             </>
           )}
-
-          <Box sx={{ mt: 5, display: "flex", alignItems: "center", gap: 1 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: STATUS_COLOR[status] }} />
-            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize" }}>
-              {status}
-            </Typography>
-          </Box>
         </Paper>
       </Box>
     </Box>

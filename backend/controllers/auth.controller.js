@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import User from "../models/User.js";
 import { sendOtpMail } from "../services/mail.service.js";
-import { TOKEN_COOKIE, TOKEN_MAX_AGE, signToken, verifyToken } from "../services/token.service.js";
+import { TOKEN_COOKIE, TOKEN_COOKIE_OPTIONS, signToken, verifyToken } from "../services/token.service.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_RE = /^\d{6}$/;
@@ -42,17 +42,17 @@ export const login = async (req, res) => {
     user.otp = undefined;
     await user.save();
 
-    res.cookie(TOKEN_COOKIE, signToken(user), {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: TOKEN_MAX_AGE,
-    });
+    res.cookie(TOKEN_COOKIE, signToken(user), TOKEN_COOKIE_OPTIONS);
     res.json({ message: "Logged in" });
   } catch (err) {
     console.error("login failed:", err.message);
     res.status(500).json({ error: "Could not log in" });
   }
+};
+
+export const logout = (req, res) => {
+  res.clearCookie(TOKEN_COOKIE, TOKEN_COOKIE_OPTIONS);
+  res.json({ message: "Logged out" });
 };
 
 export const isUserAuthenticated = (req, res) => {

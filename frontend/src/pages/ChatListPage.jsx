@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { AppBar, Avatar, Box, IconButton, Menu, MenuItem, Toolbar } from "@mui/material";
 import api from "../api/axios.js";
 import ChatLogo from "../components/ChatLogo.jsx";
 
 export default function ChatListPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
 
@@ -12,6 +14,16 @@ export default function ChatListPage() {
   }, []);
 
   const closeMenu = () => setMenuAnchor(null);
+
+  const handleLogout = async () => {
+    closeMenu();
+    try {
+      await api.post("/api/auth/logout");
+      navigate("/login", { replace: true });
+    } catch {
+      // Stay on the page if the server could not log us out.
+    }
+  };
 
   return (
     <AppBar position="static" elevation={0}>
@@ -33,7 +45,7 @@ export default function ChatListPage() {
           transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
           <MenuItem onClick={closeMenu}>Profile</MenuItem>
-          <MenuItem onClick={closeMenu}>Logout</MenuItem>
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>
       </Toolbar>
     </AppBar>
