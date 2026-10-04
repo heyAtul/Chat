@@ -8,3 +8,13 @@ export const requireAuth = (req, res, next) => {
     res.status(401).json({ error: "Not authenticated" });
   }
 };
+
+// Socket.IO version of requireAuth. Needs cookieParser on io.engine so cookies are parsed.
+export const requireSocketAuth = (socket, next) => {
+  try {
+    socket.data.userId = verifyToken(socket.request.cookies?.[TOKEN_COOKIE]).id;
+    next();
+  } catch {
+    next(new Error("Not authenticated"));
+  }
+};

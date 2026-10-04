@@ -2,9 +2,10 @@ import { createServer } from "node:http";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { Server } from "socket.io";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import { initSocket } from "./socket.js";
 
 const PORT = Number(process.env.PORT) || 8080;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
@@ -14,11 +15,10 @@ app.use(cors({ origin: CLIENT_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 const server = createServer(app);
-const io = new Server(server, { cors: { origin: CLIENT_ORIGIN } });
-
-io.on("connection", (socket) => { });
+initSocket(server, CLIENT_ORIGIN);
 
 connectDB().then(() => {
   console.log("MongoDB connected");
