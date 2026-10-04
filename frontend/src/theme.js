@@ -9,6 +9,17 @@ const theme = createTheme({
     background: { default: "#f0f2f5" },
     text: { primary: "#41525d", secondary: "#667781" },
   },
+  components: {
+    MuiTextField: {
+      defaultProps: { variant: "standard", fullWidth: true },
+    },
+    MuiButton: {
+      defaultProps: { variant: "contained", disableElevation: true },
+      styleOverrides: {
+        root: { borderRadius: 999, paddingInline: 24, textTransform: "none" },
+      },
+    },
+  },
 });
 
 export default theme;
