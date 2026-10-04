@@ -3,10 +3,11 @@ import { useNavigate } from "react-router";
 import {
   AppBar,
   Autocomplete,
-  Avatar,
   Box,
   IconButton,
   InputBase,
+  List,
+  ListItemButton,
   Menu,
   MenuItem,
   SvgIcon,
@@ -17,10 +18,10 @@ import { io } from "socket.io-client";
 import debounce from "lodash/debounce";
 import api from "../api/axios.js";
 import ChatLogo from "../components/ChatLogo.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
+import UserInfo from "../components/UserInfo.jsx";
 
 const SEARCH_DELAY = 300; // ms to wait after the last keystroke before searching
-
-const getInitial = (name) => name?.[0]?.toUpperCase();
 
 export default function ChatListPage() {
   const navigate = useNavigate();
@@ -30,9 +31,13 @@ export default function ChatListPage() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const searchAbortRef = useRef(null);
+  const [contacts, setContacts] = useState([]);
+  const [activeContact, setActiveContact] = useState(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     api.get("/api/auth/me").then(({ data }) => setUser(data)).catch(() => {});
+    api.get("/api/contacts").then(({ data }) => setContacts(data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -77,7 +82,10 @@ export default function ChatListPage() {
   // Stop any waiting or running search when leaving the page.
   useEffect(() => cancelSearch, []);
 
-  const handleSearchChange = (e, value) => {
+  const handleSearchChange = (e, value, reason) => {
+    // Picking a user is handled by handleSelectUser, which also clears the box.
+    if (reason === "selectOption") return;
+
     setSearch(value);
     const q = value.trim();
 
@@ -90,6 +98,29 @@ export default function ChatListPage() {
 
     setSearching(true);
     searchUsers(q);
+  };
+
+  const handleSelectUser = async (e, selected) => {
+    if (!selected) return;
+    handleSearchChange(e, "");
+
+    try {
+      const { data: contact } = await api.post("/api/contacts", { contactId: selected._id });
+      // Put a new contact at the top; an already-added one stays where it is.
+      setContacts((prev) => (prev.some((c) => c._id === contact._id) ? prev : [contact, ...prev]));
+    } catch {
+      // Contact could not be added; the list stays as it was.
+    }
+  };
+
+  const openChat = (contact) => {
+    setActiveContact(contact);
+    setMessage("");
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    // TODO: send the message
   };
 
   const closeMenu = () => setMenuAnchor(null);
@@ -105,7 +136,7 @@ export default function ChatListPage() {
   };
 
   return (
-    <Box>
+    <Box sx={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
       <AppBar position="static" elevation={0}>
         <Toolbar>
           <ChatLogo />
@@ -118,22 +149,14 @@ export default function ChatListPage() {
               filterOptions={(options) => options}
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, value) => option._id === value._id}
+              value={null}
+              onChange={handleSelectUser}
               inputValue={search}
               onInputChange={handleSearchChange}
               noOptionsText={search.trim() ? "No users found" : "Type a name to search"}
               renderOption={({ key, ...props }, option) => (
-                <Box component="li" key={key} {...props} sx={{ display: "flex", gap: 1.5 }}>
-                  <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: "primary.main" }}>
-                    {getInitial(option.name)}
-                  </Avatar>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" noWrap>
-                      {option.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                      {option.email}
-                    </Typography>
-                  </Box>
+                <Box component="li" key={key} {...props}>
+                  <UserInfo user={option} avatarSize={32} />
                 </Box>
               )}
               renderInput={(params) => (
@@ -165,9 +188,7 @@ export default function ChatListPage() {
           </Box>
 
           <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label="Account menu">
-            <Avatar sx={{ bgcolor: "primary.dark", width: 36, height: 36 }}>
-              {getInitial(user?.name)}
-            </Avatar>
+            <UserAvatar name={user?.name} sx={{ bgcolor: "primary.dark", width: 36, height: 36 }} />
           </IconButton>
 
           <Menu
@@ -182,6 +203,121 @@ export default function ChatListPage() {
           </Menu>
         </Toolbar>
       </AppBar>
+
+      <Box sx={{ flex: 1, minHeight: 0, display: "flex" }}>
+        {/* On phones only one panel shows at a time: the list, or the open chat. */}
+        <Box
+          sx={{
+            width: { xs: "100%", md: 360 },
+            flexShrink: 0,
+            overflowY: "auto",
+            borderRight: { md: 1 },
+            borderColor: { md: "divider" },
+            display: { xs: activeContact ? "none" : "block", md: "block" },
+          }}
+        >
+          {contacts.length === 0 ? (
+            <Typography color="text.secondary" sx={{ p: 3, textAlign: "center" }}>
+              No contacts yet. Search for someone to start a chat.
+            </Typography>
+          ) : (
+            <List disablePadding>
+              {contacts.map(({ _id, contact }) => (
+                <ListItemButton
+                  key={_id}
+                  divider
+                  selected={activeContact?._id === contact._id}
+                  onClick={() => openChat(contact)}
+                  sx={{ py: 1.5 }}
+                >
+                  <UserInfo user={contact} />
+                </ListItemButton>
+              ))}
+            </List>
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            flexDirection: "column",
+            display: { xs: activeContact ? "flex" : "none", md: "flex" },
+          }}
+        >
+          {activeContact ? (
+            <>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  px: 2,
+                  py: 1,
+                  bgcolor: "background.default",
+                  borderBottom: 1,
+                  borderColor: "divider",
+                }}
+              >
+                <IconButton
+                  onClick={() => setActiveContact(null)}
+                  aria-label="Back to contacts"
+                  sx={{ display: { md: "none" } }}
+                >
+                  <SvgIcon>
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                  </SvgIcon>
+                </IconButton>
+                <UserInfo user={activeContact} />
+              </Box>
+
+              <Box sx={{ flex: 1, overflowY: "auto", bgcolor: "background.chat" }} />
+
+              <Box
+                component="form"
+                onSubmit={handleSendMessage}
+                sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 1.5, bgcolor: "background.default" }}
+              >
+                <InputBase
+                  placeholder="Type a message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  autoFocus
+                  fullWidth
+                  sx={{ px: 2, py: 1, bgcolor: "background.paper", borderRadius: 2, fontSize: 14 }}
+                />
+                <IconButton
+                  type="submit"
+                  disabled={!message.trim()}
+                  aria-label="Send"
+                  sx={{
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                    "&:hover": { bgcolor: "primary.dark" },
+                    "&.Mui-disabled": { bgcolor: "primary.main", color: "primary.contrastText", opacity: 0.5 },
+                  }}
+                >
+                  <SvgIcon fontSize="small">
+                    <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
+                  </SvgIcon>
+                </IconButton>
+              </Box>
+            </>
+          ) : (
+            <Box
+              sx={{
+                flex: 1,
+                display: "grid",
+                placeItems: "center",
+                bgcolor: "background.default",
+                color: "text.secondary",
+              }}
+            >
+              <Typography>Select a contact to start chatting</Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 }
