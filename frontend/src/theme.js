@@ -6,7 +6,7 @@ const theme = createTheme({
     success: { main: "#25d366" },
     warning: { main: "#fbbf24" },
     error: { main: "#ef4444" },
-    background: { default: "#f0f2f5", chat: "#efeae2" },
+    background: { default: "#f0f2f5", chat: "#efeae2", myMessage: "#d9fdd3" },
     text: { primary: "#41525d", secondary: "#667781" },
   },
   components: {

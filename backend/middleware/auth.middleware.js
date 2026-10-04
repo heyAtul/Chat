@@ -13,6 +13,7 @@ export const requireAuth = (req, res, next) => {
 export const requireSocketAuth = (socket, next) => {
   try {
     socket.data.userId = verifyToken(socket.request.cookies?.[TOKEN_COOKIE]).id;
+    socket.data.userData = verifyToken(socket.request.cookies?.[TOKEN_COOKIE])
     next();
   } catch {
     next(new Error("Not authenticated"));

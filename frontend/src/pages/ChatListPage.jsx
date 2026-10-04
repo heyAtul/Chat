@@ -31,21 +31,32 @@ export default function ChatListPage() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const searchAbortRef = useRef(null);
+  const socketRef = useRef(null);
   const [contacts, setContacts] = useState([]);
   const [activeContact, setActiveContact] = useState(null);
+  const activeContactRef = useRef(null);
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    api.get("/api/auth/me").then(({ data }) => setUser(data)).catch(() => {});
-    api.get("/api/contacts").then(({ data }) => setContacts(data)).catch(() => {});
+    api.get("/api/auth/me").then(({ data }) => setUser(data)).catch(() => { });
+    api.get("/api/contacts").then(({ data }) => setContacts(data)).catch(() => { });
   }, []);
 
   useEffect(() => {
     // withCredentials sends the httpOnly token cookie, which the server checks before accepting
     const socket = io(import.meta.env.VITE_BASE_URL, { withCredentials: true });
+    socketRef.current = socket;
 
     socket.on("connect_error", (err) => {
       if (err.message === "Not authenticated") navigate("/login", { replace: true });
+    });
+
+    socket.on("receive_message", ({ message, fromUserId, toUserId, name, createdAt }) => {
+      console.log(message, fromUserId, toUserId, name, createdAt)
+      if (activeContactRef?.current?._id == toUserId) {
+        setMessages((prev) => [...prev, { message, fromUserId, toUserId, name, createdAt }])
+      }
     });
 
     return () => socket.disconnect();
@@ -113,6 +124,10 @@ export default function ChatListPage() {
     }
   };
 
+  useEffect(() => {
+    activeContactRef.current = activeContact;
+  }, [activeContact]);
+
   const openChat = (contact) => {
     setActiveContact(contact);
     setMessage("");
@@ -120,7 +135,12 @@ export default function ChatListPage() {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    // TODO: send the message
+    const text = message.trim();
+    setMessage("")
+    if (!text) return;
+    socketRef.current.emit("send_message", { to: activeContact._id, message: text }, (res) => {
+      if (res?.ok) setMessage("");
+    });
   };
 
   const closeMenu = () => setMenuAnchor(null);
@@ -271,7 +291,43 @@ export default function ChatListPage() {
                 <UserInfo user={activeContact} />
               </Box>
 
-              <Box sx={{ flex: 1, overflowY: "auto", bgcolor: "background.chat" }} />
+              <Box
+                sx={{
+                  flex: 1,
+                  overflowY: "auto",
+                  bgcolor: "background.chat",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.5,
+                  px: { xs: 2, md: 8 },
+                  py: 2,
+                }}
+              >
+                {messages.map(({ message, fromUserId }, index) => {
+                  const isMine = fromUserId === user?._id;
+                  return (
+                    <Box
+                      key={index}
+                      sx={{
+                        alignSelf: isMine ? "flex-end" : "flex-start",
+                        maxWidth: "75%",
+                        px: 1.5,
+                        py: 0.75,
+                        borderRadius: 2,
+                        borderTopRightRadius: isMine ? 0 : 8,
+                        borderTopLeftRadius: isMine ? 8 : 0,
+                        bgcolor: isMine ? "background.myMessage" : "background.paper",
+                        boxShadow: "0 1px 0.5px rgba(0, 0, 0, 0.13)",
+                        fontSize: 14,
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {message}
+                    </Box>
+                  );
+                })}
+              </Box>
 
               <Box
                 component="form"
