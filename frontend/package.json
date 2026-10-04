@@ -1,0 +1,23 @@
+{
+  "name": "chat-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router": "^8.4.0",
+    "socket.io-client": "^4.8.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^7.0.0"
+  }
+}
