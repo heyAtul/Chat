@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { Alert, Box, Button, Paper, SvgIcon, TextField, Typography } from "@mui/material";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const STATUS_DOT = {
-  connecting: "bg-amber-400",
-  connected: "bg-[#25d366]",
-  disconnected: "bg-red-500",
-  error: "bg-red-500",
+const STATUS_COLOR = {
+  connecting: "warning.main",
+  connected: "success.main",
+  disconnected: "error.main",
+  error: "error.main",
 };
 
 export default function LoginPage() {
@@ -20,7 +21,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL);
+    const socket = io(BASE_URL);
     socketRef.current = socket;
 
     socket.on("connect", () => setStatus("connected"));
@@ -54,59 +55,75 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#f0f2f5]">
-      <div className="absolute inset-x-0 top-0 h-56 bg-[#00a884]" />
+    <Box sx={{ position: "relative", minHeight: "100vh", bgcolor: "background.default" }}>
+      <Box sx={{ position: "absolute", insetInline: 0, top: 0, height: 224, bgcolor: "primary.main" }} />
 
-      <div className="relative mx-auto max-w-4xl px-4 pt-8">
-        <div className="flex items-center gap-2 text-white">
+      <Box sx={{ position: "relative", mx: "auto", maxWidth: 896, px: 2, pt: 4 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "primary.contrastText" }}>
           <ChatIcon />
-          <span className="text-sm font-medium uppercase tracking-wide">Chat</span>
-        </div>
+          <Typography variant="subtitle2" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
+            Chat
+          </Typography>
+        </Box>
 
-        <div className="mt-8 rounded-sm bg-white px-6 py-12 shadow-md sm:px-14">
-          <h1 className="text-2xl font-light text-[#41525d] sm:text-3xl">
+        <Paper elevation={3} square sx={{ mt: 4, px: { xs: 3, sm: 7 }, py: 6 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 300 }}>
             Enter your email to start chatting
-          </h1>
+          </Typography>
 
-          <form onSubmit={handleSubmit} className="mt-8 flex max-w-sm flex-col gap-4">
-            <input
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{ mt: 4, maxWidth: 384, display: "flex", flexDirection: "column", gap: 2 }}
+          >
+            <TextField
               type="email"
+              label="Email"
               placeholder="you@example.com"
+              variant="standard"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
-              className="border-b-2 border-[#00a884] px-1 py-2 text-[#111b21] placeholder:text-[#8696a0] focus:outline-none"
+              fullWidth
             />
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {joinedEmail && (
-              <p className="text-sm text-[#008069]">Joined as {joinedEmail}</p>
-            )}
+            {error && <Alert severity="error">{error}</Alert>}
+            {joinedEmail && <Alert severity="success">Joined as {joinedEmail}</Alert>}
 
-            <button
+            <Button
               type="submit"
+              variant="contained"
+              disableElevation
               disabled={status !== "connected" || submitting}
-              className="self-start rounded-full bg-[#00a884] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#008f6f] disabled:cursor-not-allowed disabled:opacity-50"
+              sx={{
+                alignSelf: "flex-start",
+                borderRadius: 999,
+                px: 3,
+                textTransform: "none",
+              }}
             >
               Next
-            </button>
-          </form>
+            </Button>
+          </Box>
 
-          <p className="mt-10 flex items-center gap-2 text-xs capitalize text-[#667781]">
-            <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} />
-            {status}
-          </p>
-        </div>
-      </div>
-    </div>
+          <Box sx={{ mt: 5, display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: STATUS_COLOR[status] }} />
+            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize" }}>
+              {status}
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    </Box>
   );
 }
 
 function ChatIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-7 w-7 fill-current">
+    <SvgIcon fontSize="large">
       <path d="M12 2C6.48 2 2 6.03 2 11c0 2.4 1.05 4.58 2.77 6.19L4 22l4.97-2.13c.97.27 1.99.42 3.03.42 5.52 0 10-4.03 10-9S17.52 2 12 2z" />
-    </svg>
+    </SvgIcon>
   );
 }
