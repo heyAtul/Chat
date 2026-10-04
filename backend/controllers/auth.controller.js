@@ -42,7 +42,7 @@ export const login = async (req, res) => {
     user.otp = undefined;
     await user.save();
 
-    res.cookie(TOKEN_COOKIE, signToken(user._id), {
+    res.cookie(TOKEN_COOKIE, signToken(user), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
