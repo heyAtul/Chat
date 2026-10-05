@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 // One document per message. `roomId` is a group room's id, or for a one-to-one chat
-// the two user ids sorted and joined with "-" (see dmRoomId in socket/message.handler.js).
+// the two user ids sorted and joined with "-" (see utils/dmRoomId.js).
 const chatSchema = new mongoose.Schema(
   {
     message: { type: String, required: true },
@@ -15,5 +15,8 @@ const chatSchema = new mongoose.Schema(
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );
+
+// Loading a chat finds its messages by room, oldest first.
+chatSchema.index({ roomId: 1, createdAt: 1 });
 
 export default mongoose.model("Chat", chatSchema);

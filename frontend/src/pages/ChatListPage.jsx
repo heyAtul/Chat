@@ -13,10 +13,33 @@ export default function ChatListPage() {
   const { contacts, loadContacts, createContact } = useContacts();
   const [activeContact, setActiveContact] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [loadingChats, setLoadingChats] = useState(false);
 
   useEffect(() => {
     api.get("/api/auth/me").then(({ data }) => setUser(data)).catch(() => {});
   }, []);
+
+  // Load the open chat's history. Switching chats cancels the previous request.
+  useEffect(() => {
+    if (!activeContact) return;
+    const controller = new AbortController();
+    setMessages([]);
+    setLoadingChats(true);
+
+    api
+      .get(`/api/chats/${activeContact._id}`, { signal: controller.signal })
+      .then(({ data }) => {
+        // Keep live messages that arrived while loading and are newer than the fetched history.
+        const lastTime = data.length ? new Date(data[data.length - 1].createdAt).getTime() : 0;
+        setMessages((live) => [...data, ...live.filter((m) => new Date(m.createdAt).getTime() > lastTime)]);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setLoadingChats(false);
+      });
+
+    return () => controller.abort();
+  }, [activeContact]);
 
   const handleIncomingMessage = (msg) => {
     const openRoomId = user && activeContact ? dmRoomId(user._id, activeContact._id) : null;
@@ -67,6 +90,7 @@ export default function ChatListPage() {
               key={activeContact._id}
               contact={activeContact}
               messages={messages}
+              loading={loadingChats}
               currentUserId={user?._id}
               onBack={() => setActiveContact(null)}
               onSend={(text) => sendMessage(activeContact._id, text)}

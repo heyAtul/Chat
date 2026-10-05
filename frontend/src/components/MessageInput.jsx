@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Box, IconButton, InputBase, SvgIcon } from "@mui/material";
 
-export default function MessageInput({ onSend }) {
+export default function MessageInput({ onSend, disabled }) {
   const [text, setText] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const message = text.trim();
-    if (!message) return;
+    if (!message || disabled) return;
     onSend(message);
     setText("");
   };
@@ -28,7 +28,7 @@ export default function MessageInput({ onSend }) {
       />
       <IconButton
         type="submit"
-        disabled={!text.trim()}
+        disabled={disabled || !text.trim()}
         aria-label="Send"
         sx={{
           bgcolor: "primary.main",

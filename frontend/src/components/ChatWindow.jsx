@@ -1,9 +1,12 @@
-import { Box, IconButton, SvgIcon } from "@mui/material";
+import { Box, IconButton, Skeleton, SvgIcon } from "@mui/material";
 import MessageBubble from "./MessageBubble.jsx";
 import MessageInput from "./MessageInput.jsx";
 import UserInfo from "./UserInfo.jsx";
 
-export default function ChatWindow({ contact, messages, currentUserId, onBack, onSend }) {
+// Placeholder bubbles shown while the chat history loads: [width, is it on my side].
+const SHIMMER_BUBBLES = [["45%", false], ["30%", true], ["55%", false], ["40%", true], ["25%", true], ["50%", false]];
+
+export default function ChatWindow({ contact, messages, loading, currentUserId, onBack, onSend }) {
   return (
     <>
       <Box
@@ -39,17 +42,27 @@ export default function ChatWindow({ contact, messages, currentUserId, onBack, o
           py: 2,
         }}
       >
-        {messages.map(({ message, fromUserData, createdAt }, index) => (
-          <MessageBubble
-            key={index}
-            text={message}
-            createdAt={createdAt}
-            isMine={fromUserData.id === currentUserId}
-          />
-        ))}
+        {loading
+          ? SHIMMER_BUBBLES.map(([width, isMine], index) => (
+              <Skeleton
+                key={index}
+                variant="rounded"
+                animation="wave"
+                height={40}
+                sx={{ width, alignSelf: isMine ? "flex-end" : "flex-start", borderRadius: 2 }}
+              />
+            ))
+          : messages.map(({ message, fromUserData, createdAt }, index) => (
+              <MessageBubble
+                key={index}
+                text={message}
+                createdAt={createdAt}
+                isMine={fromUserData.id === currentUserId}
+              />
+            ))}
       </Box>
 
-      <MessageInput onSend={onSend} />
+      <MessageInput onSend={onSend} disabled={loading} />
     </>
   );
 }

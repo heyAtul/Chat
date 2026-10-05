@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
 import { ensureContact } from "../services/contact.service.js";
 import Chat from "../models/Chat.js";
-
-function dmRoomId(fromUserId, toUserId) {
-  return [fromUserId, toUserId].sort().join("-")
-}
+import { dmRoomId } from "../utils/dmRoomId.js";
 
 export const registerMessageHandlers = (io, socket) => {
   const { userId: fromUserId, userData: fromUserData } = socket.data;

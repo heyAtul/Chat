@@ -6,6 +6,7 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
 import { initSocket } from "./socket/index.js";
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -18,6 +19,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/contacts", contactRoutes);
+app.use("/api/chats", chatRoutes);
 
 const server = createServer(app);
 initSocket(server, CLIENT_ORIGIN);
