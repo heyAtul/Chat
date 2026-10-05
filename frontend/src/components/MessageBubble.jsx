@@ -1,38 +1,53 @@
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 
-// e.g. "03:45 PM - 04/09/2071" (time, then date as DD/MM/YYYY)
-const formatMessageTime = (timestamp) => {
-  const date = new Date(timestamp);
-  const time = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
-  return `${time} - ${date.toLocaleDateString("en-GB")}`;
-};
+// A WhatsApp-style bubble. The first message of a group gets a tail and a square top corner.
+export default function MessageBubble({ text, time, isMine, showTail }) {
+  const color = isMine ? "chat.bubbleOut" : "chat.bubbleIn";
 
-export default function MessageBubble({ text, createdAt, isMine }) {
   return (
     <Box
       sx={{
+        position: "relative",
         alignSelf: isMine ? "flex-end" : "flex-start",
-        maxWidth: "75%",
-        px: 1.5,
-        py: 0.75,
-        borderRadius: 2,
-        borderTopRightRadius: isMine ? 0 : 8,
-        borderTopLeftRadius: isMine ? 8 : 0,
-        bgcolor: isMine ? "background.myMessage" : "background.paper",
-        boxShadow: "0 1px 0.5px rgba(0, 0, 0, 0.13)",
-        fontSize: 14,
+        maxWidth: { xs: "85%", md: "65%" },
+        mt: showTail ? 1.5 : 0.25,
+        px: 1,
+        pt: 0.75,
+        pb: 1,
+        borderRadius: "7.5px",
+        bgcolor: color,
+        boxShadow: "0 1px 0.5px rgba(11, 20, 26, 0.13)",
+        color: "chat.text",
+        fontSize: 14.2,
+        lineHeight: "19px",
         whiteSpace: "pre-wrap",
         overflowWrap: "anywhere",
+        ...(showTail && {
+          [isMine ? "borderTopRightRadius" : "borderTopLeftRadius"]: 0,
+          // The tail: a small triangle sticking out of the top corner.
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            width: 0,
+            height: 0,
+            borderBottom: "8px solid transparent",
+            ...(isMine
+              ? { right: -8, borderLeft: "8px solid", borderLeftColor: color }
+              : { left: -8, borderRight: "8px solid", borderRightColor: color }),
+          },
+        }),
       }}
     >
       {text}
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ display: "block", textAlign: "right", fontSize: 11, mt: 0.25 }}
+      {/* Empty space at the end of the text, so the time never covers the last line. */}
+      <Box component="span" sx={{ display: "inline-block", width: 58 }} />
+      <Box
+        component="span"
+        sx={{ position: "absolute", right: 7, bottom: 3, fontSize: 11, lineHeight: "15px", color: "text.secondary" }}
       >
-        {formatMessageTime(createdAt)}
-      </Typography>
+        {time}
+      </Box>
     </Box>
   );
 }

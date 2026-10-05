@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import api from "../api/axios.js";
-import ChatHeader from "../components/ChatHeader.jsx";
+import ChatIntro from "../components/ChatIntro.jsx";
 import ChatWindow from "../components/ChatWindow.jsx";
-import ContactList from "../components/ContactList.jsx";
+import Sidebar from "../components/Sidebar.jsx";
 import useChatSocket from "../hooks/useChatSocket.js";
 import useContacts from "../hooks/useContacts.js";
 import { dmRoomId } from "../utils/dmRoomId.js";
@@ -53,26 +53,45 @@ export default function ChatListPage() {
 
   const { sendMessage } = useChatSocket(handleIncomingMessage);
 
-  return (
-    <Box sx={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
-      <ChatHeader user={user} onSelectUser={(selected) => createContact(selected._id)} />
+  // Picking someone from search saves them as a contact and opens their chat, like WhatsApp.
+  const handleSelectUser = (selected) => {
+    createContact(selected._id);
+    setActiveContact(selected);
+  };
 
-      <Box sx={{ flex: 1, minHeight: 0, display: "flex" }}>
-        {/* On phones only one panel shows at a time: the list, or the open chat. */}
+  return (
+    // On very wide screens WhatsApp Web shows the app as a centered card over a green strip.
+    <Box sx={{ position: "relative", height: "100dvh", p: { xl: "19px" }, bgcolor: "chat.border" }}>
+      <Box sx={{ display: { xs: "none", xl: "block" }, position: "absolute", inset: "0 0 auto 0", height: 127, bgcolor: "primary.main" }} />
+
+      <Box
+        sx={{
+          position: "relative",
+          height: "100%",
+          maxWidth: 1600,
+          mx: "auto",
+          display: "flex",
+          bgcolor: "background.paper",
+          boxShadow: { xl: "0 6px 18px rgba(11, 20, 26, 0.05)" },
+        }}
+      >
+        {/* On phones only one panel shows at a time: the chat list, or the open chat. */}
         <Box
           sx={{
-            width: { xs: "100%", md: 360 },
+            width: { xs: "100%", md: "40%", lg: "30%" },
+            minWidth: { md: 340 },
             flexShrink: 0,
-            overflowY: "auto",
             borderRight: { md: 1 },
-            borderColor: { md: "divider" },
+            borderColor: { md: "chat.border" },
             display: { xs: activeContact ? "none" : "block", md: "block" },
           }}
         >
-          <ContactList
+          <Sidebar
+            user={user}
             contacts={contacts}
             activeContactId={activeContact?._id}
-            onSelect={setActiveContact}
+            onSelectContact={setActiveContact}
+            onSelectUser={handleSelectUser}
           />
         </Box>
 
@@ -96,17 +115,7 @@ export default function ChatListPage() {
               onSend={(text) => sendMessage(activeContact._id, text)}
             />
           ) : (
-            <Box
-              sx={{
-                flex: 1,
-                display: "grid",
-                placeItems: "center",
-                bgcolor: "background.default",
-                color: "text.secondary",
-              }}
-            >
-              <Typography>Select a contact to start chatting</Typography>
-            </Box>
+            <ChatIntro />
           )}
         </Box>
       </Box>

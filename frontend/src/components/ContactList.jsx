@@ -1,11 +1,11 @@
-import { List, ListItemButton, Typography } from "@mui/material";
-import UserInfo from "./UserInfo.jsx";
+import { List, Typography } from "@mui/material";
+import ChatRow from "./ChatRow.jsx";
 
 export default function ContactList({ contacts, activeContactId, onSelect }) {
   if (contacts.length === 0) {
     return (
-      <Typography color="text.secondary" sx={{ p: 3, textAlign: "center" }}>
-        No contacts yet. Search for someone to start a chat.
+      <Typography sx={{ p: 4, textAlign: "center", fontSize: 14, color: "text.secondary" }}>
+        No chats yet. Search for someone to start a new chat.
       </Typography>
     );
   }
@@ -13,15 +13,12 @@ export default function ContactList({ contacts, activeContactId, onSelect }) {
   return (
     <List disablePadding>
       {contacts.map(({ _id, contact }) => (
-        <ListItemButton
+        <ChatRow
           key={_id}
-          divider
+          user={contact}
           selected={activeContactId === contact._id}
           onClick={() => onSelect(contact)}
-          sx={{ py: 1.5 }}
-        >
-          <UserInfo user={contact} />
-        </ListItemButton>
+        />
       ))}
     </List>
   );

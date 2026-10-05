@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Box, IconButton, InputBase, SvgIcon } from "@mui/material";
+import { Box, IconButton, InputBase } from "@mui/material";
+import { SendIcon } from "./Icons.jsx";
 
 export default function MessageInput({ onSend, disabled }) {
   const [text, setText] = useState("");
@@ -16,30 +17,17 @@ export default function MessageInput({ onSend, disabled }) {
     <Box
       component="form"
       onSubmit={handleSubmit}
-      sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 1.5, bgcolor: "background.default" }}
+      sx={{ display: "flex", alignItems: "center", gap: 1, minHeight: 62, px: 2, py: 0.625, bgcolor: "chat.panel" }}
     >
       <InputBase
         placeholder="Type a message"
         value={text}
         onChange={(e) => setText(e.target.value)}
         autoFocus
-        fullWidth
-        sx={{ px: 2, py: 1, bgcolor: "background.paper", borderRadius: 2, fontSize: 14 }}
+        sx={{ flex: 1, px: 1.5, py: 1.125, bgcolor: "background.paper", borderRadius: 2, fontSize: 15, color: "chat.text" }}
       />
-      <IconButton
-        type="submit"
-        disabled={disabled || !text.trim()}
-        aria-label="Send"
-        sx={{
-          bgcolor: "primary.main",
-          color: "primary.contrastText",
-          "&:hover": { bgcolor: "primary.dark" },
-          "&.Mui-disabled": { bgcolor: "primary.main", color: "primary.contrastText", opacity: 0.5 },
-        }}
-      >
-        <SvgIcon fontSize="small">
-          <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
-        </SvgIcon>
+      <IconButton type="submit" disabled={disabled || !text.trim()} aria-label="Send" sx={{ color: "chat.icon" }}>
+        <SendIcon />
       </IconButton>
     </Box>
   );
