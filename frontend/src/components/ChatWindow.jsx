@@ -39,12 +39,12 @@ export default function ChatWindow({ contact, messages, currentUserId, onBack, o
           py: 2,
         }}
       >
-        {messages.map(({ message, fromUserId, createdAt }, index) => (
+        {messages.map(({ message, fromUserData, createdAt }, index) => (
           <MessageBubble
             key={index}
             text={message}
             createdAt={createdAt}
-            isMine={fromUserId === currentUserId}
+            isMine={fromUserData.id === currentUserId}
           />
         ))}
       </Box>

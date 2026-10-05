@@ -28,7 +28,7 @@ export default function useChatSocket(onMessage) {
     return () => socket.disconnect();
   }, [navigate]);
 
-  const sendMessage = (to, message) => socketRef.current?.emit("send_message", { to, message });
+  const sendMessage = (to, message) => socketRef.current?.emit("send_message", { toUserId: to, message });
 
   return { sendMessage };
 }

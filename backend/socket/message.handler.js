@@ -1,26 +1,58 @@
 import mongoose from "mongoose";
 import { ensureContact } from "../services/contact.service.js";
+import Chat from "../models/Chat.js";
+
+function dmRoomId(fromUserId, toUserId) {
+  return [fromUserId, toUserId].sort().join("-")
+}
 
 export const registerMessageHandlers = (io, socket) => {
-  const { userId, userData } = socket.data;
+  const { userId: fromUserId, userData: fromUserData } = socket.data;
 
-  socket.on("send_message", async ({ to, message } = {}) => {
-    if (!mongoose.isValidObjectId(to)) return;
-
+  const sendToUser = async (toUserId, message) => {
+    if (!mongoose.isValidObjectId(toUserId)) return;
+    let createdAt = Date.now()
+    let roomId = dmRoomId(fromUserId, toUserId)
+    let chatData = {
+      message,
+      fromUserData,
+      createdAt,
+      roomId
+    }
     try {
       // The receiver gets the sender as a contact with the first message, even if they're offline.
-      await ensureContact(to, userId);
+      await ensureContact(toUserId, fromUserId);
+      await Chat.create(chatData);
     } catch (err) {
       console.error("send_message failed:", err.message);
       return;
     }
 
-    io.to(to).to(userId).emit("receive_message", {
+    io.to(toUserId).to(fromUserId).emit("receive_message", chatData);
+  };
+
+  const sendToRoom = async (roomId, message) => {
+    // Only sockets that have joined the room can send to it.
+    if (!socket.rooms.has(roomId)) return;
+    let createdAt = Date.now()
+    let chatData = {
       message,
-      fromUserId: userId,
-      toUserId: to,
-      name: userData.name,
-      createdAt: Date.now(),
-    });
+      fromUserData,
+      createdAt,
+      roomId
+    }
+    try {
+      await Chat.create(chatData);
+    } catch (err) {
+      console.error("send_message failed:", err.message);
+      return;
+    }
+    io.to(roomId).emit("receive_message", chatData);
+  };
+
+  // Send with `to` for a single user, or with `roomId` for a room.
+  socket.on("send_message", async ({ toUserId, roomId, message } = {}) => {
+    if (roomId) return await sendToRoom(String(roomId), message);
+    await sendToUser(toUserId, message);
   });
 };

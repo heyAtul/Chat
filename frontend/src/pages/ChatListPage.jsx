@@ -6,6 +6,7 @@ import ChatWindow from "../components/ChatWindow.jsx";
 import ContactList from "../components/ContactList.jsx";
 import useChatSocket from "../hooks/useChatSocket.js";
 import useContacts from "../hooks/useContacts.js";
+import { dmRoomId } from "../utils/dmRoomId.js";
 
 export default function ChatListPage() {
   const [user, setUser] = useState(null);
@@ -18,11 +19,10 @@ export default function ChatListPage() {
   }, []);
 
   const handleIncomingMessage = (msg) => {
-    // I'm one of fromUserId/toUserId, so if either is the open contact, it's the open chat.
-    const openId = activeContact?._id;
-    if (msg.fromUserId === openId || msg.toUserId === openId) {
+    const openRoomId = user && activeContact ? dmRoomId(user._id, activeContact._id) : null;
+    if (msg.roomId === openRoomId) {
       setMessages((prev) => [...prev, msg]);
-    } else if (!contacts.some((c) => c.contact._id === msg.fromUserId)) {
+    } else if (!contacts.some((c) => c.contact._id === msg.fromUserData.id)) {
       // The server has already saved this contact; reload the list to show it.
       loadContacts();
     }
